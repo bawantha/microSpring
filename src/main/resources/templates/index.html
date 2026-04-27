@@ -1,22 +1,51 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>microSpring</title>
+    <title>microSpring Store</title>
 </head>
 <body>
     <h1>Welcome to microSpring</h1>
 
-    <div sec:authorize="isAuthenticated()">
-        <p>Hello, <span th:text="${name}">User</span>!</p>
-        <a href="/profile">View Profile</a> |
+    <!-- Logged in view -->
+    <div th:if="${cartName != null}">
+        <p>Hello, <strong th:text="${cartName}">User</strong>!</p>
         <a href="/logout">Logout</a>
+
+        <h2 th:text="${cartName}">Your Cart</h2>
+        <div th:if="${cart != null}">
+            <ul>
+                <li th:each="item : ${cart.items}">
+                    <span th:text="${item.item.name}">Item</span>
+                    x<span th:text="${item.quantity}">0</span>
+                    <form th:action="@{/remove/{id}(id=${item.item.id})}" method="post">
+                        <input type="hidden" name="_method" value="DELETE"/>
+                        <button type="submit">Remove one</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <div sec:authorize="isAnonymous()">
+    <!-- Anonymous view -->
+    <div th:if="${cartName == null}">
         <p>You are not logged in.</p>
         <a href="/oauth2/authorization/auth0">Login with Auth0</a>
     </div>
+
+    <!-- Inventory (visible to all) -->
+    <h2>Inventory</h2>
+    <ul>
+        <li th:each="item : ${inventory}">
+            <span th:text="${item.name}">Item Name</span> -
+            $<span th:text="${item.price}">0.00</span>
+            <span th:if="${cartName != null}">
+                <form th:action="@{/add/{id}(id=${item.id})}" method="post" style="display:inline">
+                    <button type="submit">Add to Cart</button>
+                </form>
+            </span>
+        </li>
+    </ul>
+
 </body>
 </html>

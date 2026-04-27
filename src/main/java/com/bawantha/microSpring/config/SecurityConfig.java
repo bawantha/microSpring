@@ -19,7 +19,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(exchanges -> exchanges
                         // Public pages
-                        .pathMatchers("/", "/login").permitAll()
+                        .pathMatchers("/", "/login", "/favicon.ico").permitAll()
                         // Allow item CRUD without auth (for testing/admin use)
                         .pathMatchers(HttpMethod.POST, "/item").permitAll()
                         .pathMatchers(HttpMethod.DELETE, "/item/**").permitAll()
