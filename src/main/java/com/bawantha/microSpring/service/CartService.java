@@ -31,6 +31,11 @@ public class CartService {
         return cartRepository.findAll();
     }
 
+    public Mono<Cart> getCart(String cartId) {
+        return cartRepository.findById(cartId)
+                .defaultIfEmpty(new Cart(cartId, new ArrayList<>()));
+    }
+
     public Mono<Item> saveItem(Item item) {
         return itemRepository.save(item);
     }

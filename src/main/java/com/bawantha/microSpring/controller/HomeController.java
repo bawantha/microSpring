@@ -6,8 +6,6 @@ import com.bawantha.microSpring.service.ItemService;
 import reactor.core.publisher.Mono;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,12 +28,17 @@ public class HomeController {
     }
 
     // Task 11: Handle the OAuth Authentication in the Controller
-    @GetMapping
-    Mono<Rendering> home(
-            @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
+    @GetMapping("/")
+    Mono<Rendering> home(@AuthenticationPrincipal OAuth2User oAuth2User) {
+        if (oAuth2User == null) {
+            // Not logged in — show public view with inventory only
+            return Mono.just(Rendering.view("index")
+                    .modelAttribute("inventory", this.inventoryService.getInventory())
+                    .build());
+        }
+        // Logged in — show personalised cart
         return Mono.just(Rendering.view("index")
-                .modelAttribute("cart", this.inventoryService.getCart())
+                .modelAttribute("cart", this.inventoryService.getCart(cartName(oAuth2User)))
                 .modelAttribute("inventory", this.inventoryService.getInventory())
                 .modelAttribute("cartName", cartName(oAuth2User))
                 .build());
