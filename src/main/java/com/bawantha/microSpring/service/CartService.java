@@ -1,12 +1,16 @@
 package com.bawantha.microSpring.service;
 
 import com.bawantha.microSpring.entity.Cart;
+import com.bawantha.microSpring.entity.CartItem;
 import com.bawantha.microSpring.entity.Item;
 import com.bawantha.microSpring.repository.CartRepository;
 import com.bawantha.microSpring.repository.ItemRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.Optional;
 
 @Service
 public class CartService {
@@ -33,6 +37,36 @@ public class CartService {
 
     public Mono<Void> deleteItem(String id) {
         return itemRepository.deleteById(id);
+    }
+
+    public Mono<Cart> addItemToCart(String cartId, String itemId) {
+        // Find cart by cartId, or create a new empty cart if not found
+        return cartRepository.findById(cartId)
+                .defaultIfEmpty(new Cart(cartId, new ArrayList<>()))
+                .flatMap(cart -> {
+                    // Stream through existing cart items to find one matching itemId
+                    Optional<CartItem> existingItem = cart.getItems().stream()
+                            .filter(cartItem -> cartItem.getItem().getId().equals(itemId))
+                            .findFirst();
+
+                    if (existingItem.isPresent()) {
+                        // Item found — increment quantity and return cart
+                        existingItem.get().increment();
+                        return Mono.just(cart);
+                    } else {
+                        // Item not found — retrieve from repo, create CartItem, add to cart
+                        return itemRepository.findById(itemId)
+                                .map(item -> {
+                                    CartItem cartItem = new CartItem();
+                                    cartItem.setItem(item);
+                                    cartItem.increment();
+                                    cart.getItems().add(cartItem);
+                                    return cart;
+                                });
+                    }
+                })
+                // Save the modified cart back to the repository
+                .flatMap(cartRepository::save);
     }
 
 }
