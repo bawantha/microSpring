@@ -69,4 +69,29 @@ public class CartService {
                 .flatMap(cartRepository::save);
     }
 
+    public Mono<Cart> removeOneFromCart(String cartId, String itemId) {
+        // Find cart by cartId, or create a new empty cart if not found
+        return cartRepository.findById(cartId)
+                .defaultIfEmpty(new Cart(cartId, new ArrayList<>()))
+                .flatMap(cart -> {
+                    // Find the cart item matching itemId and decrement its quantity
+                    cart.getItems().stream()
+                            .filter(cartItem -> cartItem.getItem().getId().equals(itemId))
+                            .findFirst()
+                            .ifPresent(CartItem::decrement);
+
+                    return Mono.just(cart);
+                })
+                .map(cart -> {
+                    // Rebuild cart excluding items with quantity <= 0
+                    java.util.List<CartItem> updatedItems = cart.getItems().stream()
+                            .filter(cartItem -> cartItem.getQuantity() > 0)
+                            .collect(java.util.stream.Collectors.toList());
+
+                    return new Cart(cart.getId(), updatedItems);
+                })
+                // Save the updated cart back to the repository
+                .flatMap(cartRepository::save);
+    }
+
 }
